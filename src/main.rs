@@ -17,6 +17,11 @@ enum Commands {
         /// Input string to be processed by the DFA
         input: String,
     },
+    /// Run a NFA machine
+    Nfa {
+        /// Input string to be processed by the NFA
+        input: String,
+    },
 }
 
 fn handle_cli(cli: Cli, src: &'static str) -> miette::Result<()> {
@@ -28,6 +33,18 @@ fn handle_cli(cli: Cli, src: &'static str) -> miette::Result<()> {
             let dfa_info = dfa::Info::new(parsed, src)?;
             let dfa = dfa::Machine::new(dfa_info);
             let accepted = dfa.run(&input);
+
+            if accepted {
+                println!("Input is ACCEPTED");
+            } else {
+                println!("Input is REJECTED");
+            }
+        }
+        Commands::Nfa { input } => {
+            use machine::nfa;
+            let nfa_info = nfa::Info::new(parsed, src)?;
+            let nfa = nfa::Machine::new(nfa_info);
+            let accepted = nfa.run(&input);
 
             if accepted {
                 println!("Input is ACCEPTED");

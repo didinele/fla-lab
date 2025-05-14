@@ -1,0 +1,35 @@
+# NFA that accepts strings containing either "ab" or "ba" as a substring
+[states]
+q0, qa, qb, qab, qba
+
+[alphabet]
+a, b
+
+[initial]
+q0
+
+[final]
+qab, qba
+
+[transitions]
+# Stay in initial state with self-loops
+q0(a) => q0
+q0(b) => q0
+
+# Non-deterministic transitions - we can go to qa or qb with same input
+q0(a) => qa
+q0(b) => qb
+
+# From state qa, looking for a 'b' to complete "ab"
+qa(a) => qa  # another 'a', stay in qa
+qa(b) => qab  # found 'b', go to accepting state
+
+# From state qb, looking for an 'a' to complete "ba"
+qb(b) => qb  # another 'b', stay in qb
+qb(a) => qba  # found 'a', go to accepting state
+
+# Once in accepting states, stay there
+qab(a) => qab
+qab(b) => qab
+qba(a) => qba
+qba(b) => qba

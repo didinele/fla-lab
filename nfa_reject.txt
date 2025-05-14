@@ -1,0 +1,36 @@
+# NFA that accepts strings with an odd number of 'a's and an odd number of 'b's
+[states]
+q00, q01, q10, q11
+
+[alphabet]
+a, b
+
+[initial]
+q00
+
+[final]
+q11
+
+[transitions]
+# States are labeled as qXY where:
+# - X is 0 if we've seen an even number of 'a's, 1 if odd
+# - Y is 0 if we've seen an even number of 'b's, 1 if odd
+
+# From even a's, even b's
+q00(a) => q10  # Increment a count (now odd)
+q00(b) => q01  # Increment b count (now odd)
+
+# From even a's, odd b's
+q01(a) => q11  # Increment a count (now odd)
+q01(b) => q00  # Increment b count (now even)
+
+# From odd a's, even b's
+q10(a) => q00  # Increment a count (now even)
+q10(b) => q11  # Increment b count (now odd)
+
+# From odd a's, odd b's
+q11(a) => q01  # Increment a count (now even)
+q11(b) => q10  # Increment b count (now even)
+
+# Also add epsilon transitions to show NFA behavior (we can go straight to q10 at start)
+q00(ε) => q10

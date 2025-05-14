@@ -138,7 +138,6 @@ impl Info {
         }
 
         Ok(Info {
-            // states,
             alphabet,
             transitions,
             start_state: start_state_str,
