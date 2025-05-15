@@ -79,7 +79,7 @@ impl Info {
                 .into());
             }
 
-            if !alphabet.contains(symbol) && symbol != "ε" {
+            if !alphabet.contains(symbol) {
                 return Err(ParserError::UnknownAlphabetSymbol {
                     at: transition.with.span(),
                 }
@@ -190,7 +190,7 @@ impl Machine {
         states: HashSet<&'static str>,
     ) -> HashSet<&'static str> {
         let mut closure = states.clone();
-        let mut stack: Vec<&'static str> = states.into_iter().collect();
+        let mut stack = states.into_iter().collect::<Vec<&'static str>>();
 
         while let Some(state) = stack.pop() {
             let key = TransitionFrom {

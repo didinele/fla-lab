@@ -133,7 +133,7 @@ impl Parser {
         let mut tokens = vec![];
 
         let eof_span = SourceSpan::new(input.len().into(), 0);
-        let mut input = input.chars().enumerate().peekable();
+        let mut input = input.char_indices().peekable();
 
         while let Some((i, ch)) = input.next() {
             match ch {

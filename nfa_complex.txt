@@ -1,6 +1,7 @@
 # NFA that accepts strings containing either "ab" or "ba" as a substring
+# Also demonstrates epsilon transitions to skip characters
 [states]
-q0, qa, qb, qab, qba
+q0, qa, qb, qab, qba, qskip
 
 [alphabet]
 a, b
@@ -12,6 +13,11 @@ q0
 qab, qba
 
 [transitions]
+# Epsilon transitions to show skipping characters
+q0(ε) => qskip   # Can skip to qskip without consuming input
+qskip(a) => qa   # From skip state, go to qa if we see 'a'
+qskip(b) => qb   # From skip state, go to qb if we see 'b'
+
 # Stay in initial state with self-loops
 q0(a) => q0
 q0(b) => q0
