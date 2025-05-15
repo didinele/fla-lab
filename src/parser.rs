@@ -110,11 +110,19 @@ impl From<Token> for SourceSpan {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+pub struct TransitionFrom {
+    pub initial: Token,
+    pub with_symbol: Token,
+}
+
+#[derive(Debug, Clone)]
+pub struct TransitionTo(pub Token);
+
 #[derive(Debug)]
 pub struct TransitionInfo {
-    pub from: Token,
-    pub with: Token,
-    pub to: Token,
+    pub from: TransitionFrom,
+    pub to: TransitionTo,
 }
 
 #[derive(Debug)]
@@ -481,9 +489,11 @@ impl Parser {
                     };
 
                     transitions.push(TransitionInfo {
-                        from: token,
-                        with: letter_token,
-                        to: next_state_token,
+                        from: TransitionFrom {
+                            initial: token,
+                            with_symbol: letter_token,
+                        },
+                        to: TransitionTo(next_state_token),
                     });
                 }
                 TokenKind::EOF => {

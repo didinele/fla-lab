@@ -4,6 +4,8 @@ use thiserror::Error;
 
 use crate::parser::{ParserError, PartialMachineInfo};
 
+use super::{TransitionFrom, TransitionTo};
+
 #[derive(Error, Diagnostic, Debug)]
 pub enum DFAError {
     #[error("Cannot have multiple transitions from state '{initial}' with symbol '{with_symbol}'")]
@@ -19,15 +21,6 @@ pub enum DFAError {
         with_symbol: &'static str,
     },
 }
-
-#[derive(Debug, PartialEq, Eq, Hash)]
-pub struct TransitionFrom {
-    initial: &'static str,
-    with_symbol: &'static str,
-}
-
-#[derive(Debug)]
-pub struct TransitionTo(&'static str);
 
 #[derive(Debug)]
 pub struct Info {
@@ -76,28 +69,28 @@ impl Info {
         }
 
         for transition in machine.transitions {
-            let from_state = transition.from.src(src);
-            let symbol = transition.with.src(src);
-            let to_state = transition.to.src(src);
+            let from_state = transition.from.initial.src(src);
+            let symbol = transition.from.with_symbol.src(src);
+            let to_state = transition.to.0.src(src);
 
             // Validate transition states and symbols
             if !states.contains(from_state) {
                 return Err(ParserError::UnknownState {
-                    at: transition.from.span(),
+                    at: transition.from.initial.span(),
                 }
                 .into());
             }
 
             if !states.contains(to_state) {
                 return Err(ParserError::UnknownState {
-                    at: transition.to.span(),
+                    at: transition.to.0.span(),
                 }
                 .into());
             }
 
             if !alphabet.contains(symbol) {
                 return Err(ParserError::UnknownAlphabetSymbol {
-                    at: transition.with.span(),
+                    at: transition.from.with_symbol.span(),
                 }
                 .into());
             }

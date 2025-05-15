@@ -2,14 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::parser::{ParserError, PartialMachineInfo};
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
-pub struct TransitionFrom {
-    initial: &'static str,
-    with_symbol: &'static str,
-}
-
-#[derive(Debug, Clone)]
-pub struct TransitionTo(&'static str);
+use super::{TransitionFrom, TransitionTo};
 
 #[derive(Debug, Clone)]
 pub struct Info {
@@ -60,28 +53,28 @@ impl Info {
         }
 
         for transition in machine.transitions {
-            let from_state = transition.from.src(src);
-            let symbol = transition.with.src(src);
-            let to_state = transition.to.src(src);
+            let from_state = transition.from.initial.src(src);
+            let symbol = transition.from.with_symbol.src(src);
+            let to_state = transition.to.0.src(src);
 
             // Validate transition states and symbols
             if !states.contains(from_state) {
                 return Err(ParserError::UnknownState {
-                    at: transition.from.span(),
+                    at: transition.from.initial.span(),
                 }
                 .into());
             }
 
             if !states.contains(to_state) {
                 return Err(ParserError::UnknownState {
-                    at: transition.to.span(),
+                    at: transition.to.0.span(),
                 }
                 .into());
             }
 
             if !alphabet.contains(symbol) {
                 return Err(ParserError::UnknownAlphabetSymbol {
-                    at: transition.with.span(),
+                    at: transition.from.with_symbol.span(),
                 }
                 .into());
             }

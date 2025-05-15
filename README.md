@@ -5,10 +5,8 @@
 ## DFA test
 
 ```
-❯ cargo run -- dfa.txt dfa 1
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s
-     Running `target/debug/LFA dfa.txt dfa 1`
-Input is ACCEPTED
+cargo run -- dfa.txt dfa 1
+# Expected: ACCEPTED
 ```
 
 ## NFA tests
