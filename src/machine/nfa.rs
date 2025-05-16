@@ -118,10 +118,6 @@ impl Machine {
     }
 
     pub fn run(mut self, input: &str) -> bool {
-        // Reset to initial state (including epsilon closure)
-        let initial_states = HashSet::from([self.info.start_state]);
-        self.current_states = Self::compute_epsilon_closure(&self.info, initial_states);
-
         // Process each character in the input
         for c in input.chars() {
             let symbol = self.find_symbol(c);
