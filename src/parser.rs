@@ -66,6 +66,9 @@ pub enum TokenKind {
     Comma,
     Arrow,
     Identifier,
+    Push,
+    Pop,
+    Noop,
     EOF,
 }
 
@@ -99,6 +102,9 @@ impl fmt::Display for Token {
             TokenKind::Comma => write!(f, ","),
             TokenKind::Arrow => write!(f, "=>"),
             TokenKind::Identifier => write!(f, "<identifier>"),
+            TokenKind::Push => write!(f, "PUSH:<symbol>"),
+            TokenKind::Pop => write!(f, "POP"),
+            TokenKind::Noop => write!(f, "NOOP"),
             TokenKind::EOF => write!(f, "<EOF>"),
         }
     }
@@ -114,10 +120,18 @@ impl From<Token> for SourceSpan {
 pub struct TransitionFrom {
     pub initial: Token,
     pub with_symbol: Token,
+    pub with_stack_symbol: Option<Token>,
 }
 
 #[derive(Debug, Clone)]
-pub struct TransitionTo(pub Token);
+pub enum StackTransition {
+    Push(Token, Token),
+    Pop(Token),
+    NoOp(Token),
+}
+
+#[derive(Debug, Clone)]
+pub struct TransitionTo(pub Token, pub Option<StackTransition>);
 
 #[derive(Debug)]
 pub struct TransitionInfo {
@@ -132,6 +146,9 @@ pub struct PartialMachineInfo {
     pub transitions: Vec<TransitionInfo>,
     pub start_state: Token,
     pub final_states: Vec<Token>,
+
+    pub stack_alphabet: Option<Vec<Token>>,
+    pub start_stack: Option<Token>,
 }
 
 pub struct Parser;
@@ -221,6 +238,8 @@ impl Parser {
     pub fn parse(src: &'static str, input: Vec<Token>) -> miette::Result<PartialMachineInfo> {
         let mut states = None;
         let mut alphabet = None;
+        let mut stack_alphabet = None;
+        let mut start_stack = None;
         let mut transitions = None;
         let mut start_state = None;
         let mut final_states = None;
@@ -240,7 +259,7 @@ impl Parser {
 
             match section.src(src) {
                 "initial" => {
-                    start_state = Some(Parser::parse_initial_section(input)?);
+                    start_state = Some(Parser::parse_single_section(input)?);
                 }
                 "final" => {
                     final_states = Some(Parser::parse_list_section(input)?);
@@ -250,6 +269,12 @@ impl Parser {
                 }
                 "alphabet" => {
                     alphabet = Some(Parser::parse_list_section(input)?);
+                }
+                "stack_alphabet" => {
+                    stack_alphabet = Some(Parser::parse_list_section(input)?);
+                }
+                "start_stack" => {
+                    start_stack = Some(Parser::parse_single_section(input)?);
                 }
                 "transitions" => {
                     transitions = Some(Parser::parse_transitions(input)?);
@@ -276,6 +301,8 @@ impl Parser {
             final_states: final_states.ok_or(ParserError::MissingSection {
                 section: "final_states",
             })?,
+            stack_alphabet,
+            start_stack,
         })
     }
 
@@ -333,7 +360,7 @@ impl Parser {
         Ok(name)
     }
 
-    fn parse_initial_section(
+    fn parse_single_section(
         input: &mut Peekable<impl Iterator<Item = Token>>,
     ) -> miette::Result<Token> {
         let token = input.next().unwrap();
@@ -437,6 +464,29 @@ impl Parser {
                         }
                     };
 
+                    // Potential stack symbol
+                    let mut stack_letter_token = None;
+                    if input.peek().unwrap().kind == TokenKind::Comma {
+                        // Pass the comma
+                        input.next().unwrap();
+                        let stack_letter = input.next().unwrap();
+                        match stack_letter.kind {
+                            TokenKind::Identifier => {
+                                stack_letter_token = Some(stack_letter);
+                            }
+                            TokenKind::EOF => {
+                                return Err(ParserError::UnexpectedEOF.into());
+                            }
+                            _ => {
+                                return Err(ParserError::UnexpectedToken {
+                                    at: stack_letter.span,
+                                    expected: "<identifier>",
+                                }
+                                .into());
+                            }
+                        }
+                    }
+
                     // Assert right paren
                     let right_paren_token = input.next().unwrap();
                     match right_paren_token.kind {
@@ -469,6 +519,22 @@ impl Parser {
                         }
                     };
 
+                    // Assert left paren
+                    let left_paren_token = input.next().unwrap();
+                    match left_paren_token.kind {
+                        TokenKind::LeftParen => {}
+                        TokenKind::EOF => {
+                            return Err(ParserError::UnexpectedEOF.into());
+                        }
+                        _ => {
+                            return Err(ParserError::UnexpectedToken {
+                                at: left_paren_token.span,
+                                expected: "(",
+                            }
+                            .into());
+                        }
+                    };
+
                     let next_state = input.next().unwrap();
                     let next_state_token = match next_state.kind {
                         TokenKind::Identifier => next_state,
@@ -488,12 +554,78 @@ impl Parser {
                         }
                     };
 
+                    let mut stack_next_state_token = None;
+                    if input.peek().unwrap().kind == TokenKind::Comma {
+                        // Pass the comma
+                        input.next().unwrap();
+                        let stack_next_state = input.next().unwrap();
+                        match stack_next_state.kind {
+                            TokenKind::Push => {
+                                // We need our idenetifier now
+                                let stack_next_state_iden = input.next().unwrap();
+                                match stack_next_state_iden.kind {
+                                    TokenKind::Identifier => {
+                                        stack_next_state_token = Some(StackTransition::Push(
+                                            stack_next_state,
+                                            stack_next_state_iden,
+                                        ));
+                                    }
+                                    TokenKind::EOF => {
+                                        return Err(ParserError::UnexpectedEOF.into());
+                                    }
+                                    _ => {
+                                        return Err(ParserError::UnexpectedToken {
+                                            at: stack_next_state_iden.span,
+                                            expected: "<identifier>",
+                                        }
+                                        .into());
+                                    }
+                                }
+                            }
+                            TokenKind::Pop => {
+                                stack_next_state_token =
+                                    Some(StackTransition::Pop(stack_next_state));
+                            }
+                            TokenKind::Noop => {
+                                stack_next_state_token =
+                                    Some(StackTransition::NoOp(stack_next_state));
+                            }
+                            TokenKind::EOF => {
+                                return Err(ParserError::UnexpectedEOF.into());
+                            }
+                            _ => {
+                                return Err(ParserError::UnexpectedToken {
+                                    at: stack_next_state.span,
+                                    expected: "<identifier>",
+                                }
+                                .into());
+                            }
+                        }
+                    }
+
+                    // Assert right paren
+                    let right_paren_token = input.next().unwrap();
+                    match right_paren_token.kind {
+                        TokenKind::RightParen => {}
+                        TokenKind::EOF => {
+                            return Err(ParserError::UnexpectedEOF.into());
+                        }
+                        _ => {
+                            return Err(ParserError::UnexpectedToken {
+                                at: right_paren_token.span,
+                                expected: ")",
+                            }
+                            .into());
+                        }
+                    };
+
                     transitions.push(TransitionInfo {
                         from: TransitionFrom {
                             initial: token,
                             with_symbol: letter_token,
+                            with_stack_symbol: stack_letter_token,
                         },
-                        to: TransitionTo(next_state_token),
+                        to: TransitionTo(next_state_token, stack_next_state_token),
                     });
                 }
                 TokenKind::EOF => {

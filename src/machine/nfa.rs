@@ -1,8 +1,17 @@
 use std::collections::{HashMap, HashSet};
 
+use miette::Diagnostic;
+use thiserror::Error;
+
 use crate::parser::{ParserError, PartialMachineInfo};
 
 use super::{TransitionFrom, TransitionTo};
+
+#[derive(Error, Diagnostic, Debug)]
+pub enum NFAError {
+    #[error("NFA cannot have stack operations")]
+    StackOperationsNotAllowed,
+}
 
 #[derive(Debug, Clone)]
 pub struct Info {
@@ -16,6 +25,10 @@ pub struct Info {
 
 impl Info {
     pub fn new(machine: PartialMachineInfo, src: &'static str) -> miette::Result<Self> {
+        if machine.stack_alphabet.is_some() || machine.start_stack.is_some() {
+            return Err(NFAError::StackOperationsNotAllowed.into());
+        }
+
         let mut states = HashSet::new();
         let mut alphabet = HashSet::new();
         let mut transitions = HashMap::new();
@@ -53,6 +66,10 @@ impl Info {
         }
 
         for transition in machine.transitions {
+            if transition.from.with_stack_symbol.is_some() || transition.to.1.is_some() {
+                return Err(NFAError::StackOperationsNotAllowed.into());
+            }
+
             let from_state = transition.from.initial.src(src);
             let symbol = transition.from.with_symbol.src(src);
             let to_state = transition.to.0.src(src);

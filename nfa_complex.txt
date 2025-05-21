@@ -14,28 +14,28 @@ qab, qba
 
 [transitions]
 # Epsilon transitions to show skipping characters
-q0(ε) => qskip   # Can skip to qskip without consuming input
-qskip(a) => qa   # From skip state, go to qa if we see 'a'
-qskip(b) => qb   # From skip state, go to qb if we see 'b'
+q0(ε) => (qskip)   # Can skip to qskip without consuming input
+qskip(a) => (qa)   # From skip state, go to qa if we see 'a'
+qskip(b) => (qb)   # From skip state, go to qb if we see 'b'
 
 # Stay in initial state with self-loops
-q0(a) => q0
-q0(b) => q0
+q0(a) => (q0)
+q0(b) => (q0)
 
 # Non-deterministic transitions - we can go to qa or qb with same input
-q0(a) => qa
-q0(b) => qb
+q0(a) => (qa)
+q0(b) => (qb)
 
 # From state qa, looking for a 'b' to complete "ab"
-qa(a) => qa  # another 'a', stay in qa
-qa(b) => qab  # found 'b', go to accepting state
+qa(a) => (qa)  # another 'a', stay in qa
+qa(b) => (qab)  # found 'b', go to accepting state
 
 # From state qb, looking for an 'a' to complete "ba"
-qb(b) => qb  # another 'b', stay in qb
-qb(a) => qba  # found 'a', go to accepting state
+qb(b) => (qb)  # another 'b', stay in qb
+qb(a) => (qba)  # found 'a', go to accepting state
 
 # Once in accepting states, stay there
-qab(a) => qab
-qab(b) => qab
-qba(a) => qba
-qba(b) => qba
+qab(a) => (qab)
+qab(b) => (qab)
+qba(a) => (qba)
+qba(b) => (qba)
