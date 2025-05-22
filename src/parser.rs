@@ -133,16 +133,16 @@ pub struct TransitionFrom {
 
 #[derive(Debug, Clone)]
 pub enum StackTransition {
-    Push(Token, Token), // PUSH:symbol
-    Pop(Token),
-    NoOp(Token),
-    Write(Token, Token), // WRITE:symbol
+    Push((), Token), // PUSH:symbol
+    Pop(()),
+    NoOp(()),
+    Write((), Token), // WRITE:symbol
 }
 
 #[derive(Debug, Clone)]
 pub enum Direction {
-    Left(Token),
-    Right(Token),
+    Left(()),
+    Right(()),
 }
 
 #[derive(Debug, Clone)]
@@ -671,7 +671,7 @@ impl Parser {
                                 match stack_next_state_iden.kind {
                                     TokenKind::Identifier => {
                                         stack_next_state_token = Some(StackTransition::Push(
-                                            op_token,
+                                            (), // Was op_token
                                             stack_next_state_iden,
                                         ));
                                     }
@@ -688,10 +688,10 @@ impl Parser {
                                 }
                             }
                             TokenKind::Pop => {
-                                stack_next_state_token = Some(StackTransition::Pop(op_token));
+                                stack_next_state_token = Some(StackTransition::Pop(())); // Was op_token
                             }
                             TokenKind::Noop => {
-                                stack_next_state_token = Some(StackTransition::NoOp(op_token));
+                                stack_next_state_token = Some(StackTransition::NoOp(())); // Was op_token
                             }
 
                             // TM tape operations
@@ -717,7 +717,7 @@ impl Parser {
                                 match write_symbol.kind {
                                     TokenKind::Identifier => {
                                         stack_next_state_token =
-                                            Some(StackTransition::Write(op_token, write_symbol));
+                                            Some(StackTransition::Write((), write_symbol)); // Was op_token
                                     }
                                     TokenKind::EOF => {
                                         return Err(ParserError::UnexpectedEOF.into());
@@ -732,10 +732,10 @@ impl Parser {
                                 }
                             }
                             TokenKind::Left => {
-                                direction_token = Some(Direction::Left(op_token));
+                                direction_token = Some(Direction::Left(())); // Was op_token
                             }
                             TokenKind::Right => {
-                                direction_token = Some(Direction::Right(op_token));
+                                direction_token = Some(Direction::Right(())); // Was op_token
                             }
                             TokenKind::EOF => {
                                 return Err(ParserError::UnexpectedEOF.into());
@@ -756,10 +756,10 @@ impl Parser {
                             let dir_token = input.next().unwrap();
                             match dir_token.kind {
                                 TokenKind::Left => {
-                                    direction_token = Some(Direction::Left(dir_token));
+                                    direction_token = Some(Direction::Left(())); // Was dir_token
                                 }
                                 TokenKind::Right => {
-                                    direction_token = Some(Direction::Right(dir_token));
+                                    direction_token = Some(Direction::Right(())); // Was dir_token
                                 }
                                 TokenKind::EOF => {
                                     return Err(ParserError::UnexpectedEOF.into());
