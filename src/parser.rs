@@ -73,7 +73,6 @@ pub enum TokenKind {
     Write,
     Left,
     Right,
-    Stay,
     EOF,
 }
 
@@ -114,7 +113,6 @@ impl fmt::Display for Token {
             TokenKind::Write => write!(f, "WRITE:<symbol>"),
             TokenKind::Left => write!(f, "LEFT"),
             TokenKind::Right => write!(f, "RIGHT"),
-            TokenKind::Stay => write!(f, "STAY"),
             TokenKind::EOF => write!(f, "<EOF>"),
         }
     }
@@ -145,7 +143,6 @@ pub enum StackTransition {
 pub enum Direction {
     Left(Token),
     Right(Token),
-    Stay(Token),
 }
 
 #[derive(Debug, Clone)]
@@ -283,12 +280,6 @@ impl Parser {
                         "RIGHT" => {
                             tokens.push(Token::new(
                                 TokenKind::Right,
-                                SourceSpan::new(i.into(), identifier.len()),
-                            ));
-                        }
-                        "STAY" => {
-                            tokens.push(Token::new(
-                                TokenKind::Stay,
                                 SourceSpan::new(i.into(), identifier.len()),
                             ));
                         }
@@ -746,16 +737,13 @@ impl Parser {
                             TokenKind::Right => {
                                 direction_token = Some(Direction::Right(op_token));
                             }
-                            TokenKind::Stay => {
-                                direction_token = Some(Direction::Stay(op_token));
-                            }
                             TokenKind::EOF => {
                                 return Err(ParserError::UnexpectedEOF.into());
                             }
                             _ => {
                                 return Err(ParserError::UnexpectedToken {
                                     at: op_token.span,
-                                    expected: "PUSH, POP, NOOP, WRITE, LEFT, RIGHT, or STAY",
+                                    expected: "PUSH, POP, NOOP, WRITE, LEFT, or RIGHT", // Removed STAY
                                 }
                                 .into());
                             }
@@ -772,9 +760,6 @@ impl Parser {
                                 }
                                 TokenKind::Right => {
                                     direction_token = Some(Direction::Right(dir_token));
-                                }
-                                TokenKind::Stay => {
-                                    direction_token = Some(Direction::Stay(dir_token));
                                 }
                                 TokenKind::EOF => {
                                     return Err(ParserError::UnexpectedEOF.into());

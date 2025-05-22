@@ -36,7 +36,6 @@ pub struct TMTransitionFrom {
 pub enum Direction {
     Left,
     Right,
-    Stay,
 }
 
 #[derive(Debug, Clone)]
@@ -172,7 +171,6 @@ impl Info {
                 Some(dir_action) => match dir_action {
                     ParserDirection::Left(_) => Direction::Left,
                     ParserDirection::Right(_) => Direction::Right,
-                    ParserDirection::Stay(_) => Direction::Stay,
                 },
                 None => {
                     return Err(InfoError::MissingSection {
@@ -329,7 +327,6 @@ impl Machine {
                 match transition.direction {
                     Direction::Left => tape.move_left(),
                     Direction::Right => tape.move_right(),
-                    Direction::Stay => (), // Don't move
                 }
 
                 // Update current state

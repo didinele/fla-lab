@@ -31,10 +31,10 @@ q1(Y) => (q1, WRITE:Y, RIGHT)  # Skip already marked symbols
 q1(_) => (q3, WRITE:_, LEFT)  # Reached end, now look for 'a'
 
 q3(a) => (q4, WRITE:X, LEFT)  # Found matching 'a', mark with X and move left
-q3(b) => (qreject, WRITE:b, STAY)  # Mismatch, reject
+q3(b) => (qreject, WRITE:b, LEFT)  # Mismatch, reject (was STAY)
 q3(X) => (q3, WRITE:X, LEFT)  # Skip already processed symbols
 q3(Y) => (q3, WRITE:Y, LEFT)  # Skip already processed symbols
-q3(_) => (qaccept, WRITE:_, STAY)  # Reached beginning with all matches - accept
+q3(_) => (qaccept, WRITE:_, RIGHT)  # Reached beginning with all matches - accept (was STAY)
 
 # For 'b' at the beginning, mark with Y and look for matching 'b' at the end
 q2(a) => (q2, WRITE:a, RIGHT)
@@ -44,10 +44,10 @@ q2(Y) => (q2, WRITE:Y, RIGHT)  # Skip already marked symbols
 q2(_) => (q5, WRITE:_, LEFT)  # Reached end, now look for 'b'
 
 q5(b) => (q4, WRITE:Y, LEFT)  # Found matching 'b', mark with Y and move left
-q5(a) => (qreject, WRITE:a, STAY)  # Mismatch, reject
+q5(a) => (qreject, WRITE:a, LEFT)  # Mismatch, reject (was STAY)
 q5(X) => (q5, WRITE:X, LEFT)  # Skip already processed symbols
 q5(Y) => (q5, WRITE:Y, LEFT)  # Skip already processed symbols
-q5(_) => (qaccept, WRITE:_, STAY)  # Reached beginning with all matches - accept
+q5(_) => (qaccept, WRITE:_, RIGHT)  # Reached beginning with all matches - accept (was STAY)
 
 # After matching a pair, go back to the beginning to find next unprocessed symbol
 q4(a) => (q4, WRITE:a, LEFT)
