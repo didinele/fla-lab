@@ -59,6 +59,33 @@
            # Expected: ACCEPTED (Tape: _v0__v)
     ```
 
+    c. See [`tm_unary_addition.txt`](./tm_unary_addition.txt):
+    ```
+    cargo run -- tm_unary_addition.txt tm "11+111"
+    # Expected: ACCEPTED (Tape: 11111_)
+
+    cargo run -- tm_unary_addition.txt tm "1+1"
+    # Expected: ACCEPTED (Tape: 11_)
+
+    cargo run -- tm_unary_addition.txt tm "+11"
+    # Expected: ACCEPTED (Tape: 11_)
+
+    cargo run -- tm_unary_addition.txt tm "11+"
+    # Expected: ACCEPTED (Tape: 11_)
+
+    cargo run -- tm_unary_addition.txt tm "111"
+    # Expected: ACCEPTED (Tape: 111_)
+
+    cargo run -- tm_unary_addition.txt tm "+"
+    # Expected: ACCEPTED (Tape: _)
+
+    cargo run -- tm_unary_addition.txt tm ""
+    # Expected: ACCEPTED (Tape: _)
+
+    cargo run -- tm_unary_addition.txt tm "1+1+1"
+    # Expected: REJECTED
+    ```
+
 ## Misc tests for all the `.txt` files present
 
 ### DFA test
@@ -137,4 +164,30 @@ cargo run -- tm_video_memory.txt tm "\_v\_\_\_v"
 cargo run -- tm_video_memory.txt tm "0v\_\_\_v"
 
 # Expected: ACCEPTED (Tape: \_v0\_\_v)
+```
+
+```
+cargo run -- tm_unary_addition.txt tm "11+111"
+# Expected: ACCEPTED (Tape: 11111_)
+
+cargo run -- tm_unary_addition.txt tm "1+1"
+# Expected: ACCEPTED (Tape: 11_)
+
+cargo run -- tm_unary_addition.txt tm "+11"
+# Expected: ACCEPTED (Tape: 11_)
+
+cargo run -- tm_unary_addition.txt tm "11+"
+# Expected: ACCEPTED (Tape: 11_)
+
+cargo run -- tm_unary_addition.txt tm "111"
+# Expected: ACCEPTED (Tape: 111_)
+
+cargo run -- tm_unary_addition.txt tm "+"
+# Expected: ACCEPTED (Tape: _)
+
+cargo run -- tm_unary_addition.txt tm ""
+# Expected: ACCEPTED (Tape: _)
+
+cargo run -- tm_unary_addition.txt tm "1+1+1"
+# Expected: REJECTED
 ```

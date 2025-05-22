@@ -1,0 +1,52 @@
+# Turing Machine: Unary Addition
+# Input: m_ones + n_ones (e.g., "11+111")
+# Output: (m+n)_ones (e.g., "11111")
+# If no '+' is present, the input is accepted as is.
+
+[states]
+q0, q_scan_to_end, q_erase_one_and_accept, q_accept, q_reject
+
+[alphabet]
+# Symbols allowed in the initial input string by the user
+1, +
+
+[tape_alphabet]
+# Symbols the TM can read/write on the tape
+1, +, _
+
+[blank_symbol]
+_
+
+[initial]
+q0
+
+[final]
+q_accept
+
+[transitions]
+# q0: Initial state. Scan right.
+# If '1', keep it, move right, stay in q0.
+# If '+', change it to '1', move right, go to q_scan_to_end.
+# If blank '_', it means input is empty or only 1s (no '+'). Accept.
+q0(1) => (q0, WRITE:1, RIGHT)
+q0(+) => (q_scan_to_end, WRITE:1, RIGHT)
+q0(_) => (q_accept, WRITE:_, RIGHT)
+
+# q_scan_to_end: The '+' was found and replaced by '1'.
+# Now, scan to the rightmost end of all consecutive '1's.
+# If '1', keep it, move right, stay in q_scan_to_end.
+# If blank '_', we've passed all '1's. Move left to position on the last '1' to erase it.
+# If another '+', input is malformed (e.g., "1+1+1"). Reject.
+q_scan_to_end(1) => (q_scan_to_end, WRITE:1, RIGHT)
+q_scan_to_end(_) => (q_erase_one_and_accept, WRITE:_, LEFT)
+q_scan_to_end(+) => (q_reject, WRITE:+, RIGHT)
+
+# q_erase_one_and_accept: Head is on the last '1' of what was temporarily (m+n+1) ones.
+# Change this '1' to blank '_' to make the total (m+n) ones. Move right and accept.
+# This state should only be entered if the head is on a '1'.
+# If it's on '+' or '_', something is wrong with prior logic or input was severely malformed.
+q_erase_one_and_accept(1) => (q_accept, WRITE:_, RIGHT)
+# Implicitly reject if not on '1' by halting due to no transition.
+
+# q_accept: Accepting state.
+# q_reject: Rejecting state.
