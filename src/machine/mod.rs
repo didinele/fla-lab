@@ -1,6 +1,7 @@
 pub mod dfa;
 pub mod nfa;
 pub mod pda;
+pub mod tm;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct TransitionFrom {

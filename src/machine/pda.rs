@@ -27,18 +27,15 @@ pub enum StackAction {
 
 #[derive(Error, Diagnostic, Debug)]
 pub enum PDAError {
-    #[error(
-        "PDA must have a stack alphabet and stack information in each transition"
-    )]
+    #[error("PDA must have a stack alphabet and stack information in each transition")]
     StackOperationsRequired,
+    #[error("PDA cannot have tape operations")]
+    TapeOperationsNotAllowed,
 }
 
 #[derive(Debug, Clone)]
 pub struct Info {
-    // We actually never need the full states hashset
-    // pub states: HashSet<&'static str>,
     pub alphabet: HashSet<&'static str>,
-    pub stack_alphabet: HashSet<&'static str>,
     pub transitions: HashMap<PDATransitionFrom, Vec<PDATransitionTo>>,
     pub start_state: &'static str,
     pub final_states: HashSet<&'static str>,
@@ -47,6 +44,11 @@ pub struct Info {
 
 impl Info {
     pub fn new(machine: PartialMachineInfo, src: &'static str) -> miette::Result<Self> {
+        // Check for tape operations which are not allowed in PDA
+        if machine.tape_alphabet.is_some() || machine.blank_symbol.is_some() {
+            return Err(PDAError::TapeOperationsNotAllowed.into());
+        }
+
         let mut states = HashSet::new();
         let mut alphabet = HashSet::new();
         let mut stack_alphabet = HashSet::new();
@@ -154,6 +156,11 @@ impl Info {
                 None
             };
 
+            // Check for tape operations (direction) which are not allowed in PDA
+            if transition.to.2.is_some() {
+                return Err(PDAError::TapeOperationsNotAllowed.into());
+            }
+
             // Extract stack action from transition
             let stack_action = match &transition.to.1 {
                 Some(stack_trans) => match stack_trans {
@@ -168,6 +175,9 @@ impl Info {
                     }
                     StackTransition::Pop(_) => StackAction::Pop,
                     StackTransition::NoOp(_) => StackAction::NoOp,
+                    StackTransition::Write(_, _) => {
+                        return Err(PDAError::TapeOperationsNotAllowed.into());
+                    }
                 },
                 None => unreachable!(
                     "Stack action should not be None, this should be handled above. This is a bug"
@@ -190,7 +200,6 @@ impl Info {
 
         Ok(Info {
             alphabet,
-            stack_alphabet,
             transitions,
             start_state,
             final_states,
@@ -224,9 +233,9 @@ impl Machine {
     pub fn run(mut self, input: &str) -> bool {
         // Process each character in the input using a deterministic approach
         // (taking the first valid transition)
-        let mut input_chars: Vec<char> = input.chars().collect();
+        let input_chars: Vec<char> = input.chars().collect();
         let mut position = 0;
-        
+
         // First, try to process any epsilon transitions before consuming input
         while self.make_transition("ε", self.stack.back().copied()) {
             // Continue making epsilon transitions until none are left
@@ -245,7 +254,7 @@ impl Machine {
             if let Some(symbol) = current_symbol {
                 // Get the stack top if available
                 let stack_top = self.stack.back().copied();
-                
+
                 // Always try epsilon transitions first
                 let mut made_transition = false;
                 if symbol != "ε" {
@@ -262,7 +271,7 @@ impl Machine {
                         position += 1;
                     }
                 }
-                
+
                 if !made_transition {
                     // No valid transition found for the current state, symbol, and stack
                     if symbol == "ε" && position >= input_chars.len() {

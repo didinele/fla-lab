@@ -70,6 +70,10 @@ pub enum TokenKind {
     Push,
     Pop,
     Noop,
+    Write,
+    Left,
+    Right,
+    Stay,
     EOF,
 }
 
@@ -107,6 +111,10 @@ impl fmt::Display for Token {
             TokenKind::Push => write!(f, "PUSH:<symbol>"),
             TokenKind::Pop => write!(f, "POP"),
             TokenKind::Noop => write!(f, "NOOP"),
+            TokenKind::Write => write!(f, "WRITE:<symbol>"),
+            TokenKind::Left => write!(f, "LEFT"),
+            TokenKind::Right => write!(f, "RIGHT"),
+            TokenKind::Stay => write!(f, "STAY"),
             TokenKind::EOF => write!(f, "<EOF>"),
         }
     }
@@ -127,13 +135,25 @@ pub struct TransitionFrom {
 
 #[derive(Debug, Clone)]
 pub enum StackTransition {
-    Push(Token, Token),
+    Push(Token, Token), // PUSH:symbol
     Pop(Token),
     NoOp(Token),
+    Write(Token, Token), // WRITE:symbol
 }
 
 #[derive(Debug, Clone)]
-pub struct TransitionTo(pub Token, pub Option<StackTransition>);
+pub enum Direction {
+    Left(Token),
+    Right(Token),
+    Stay(Token),
+}
+
+#[derive(Debug, Clone)]
+pub struct TransitionTo(
+    pub Token,
+    pub Option<StackTransition>,
+    pub Option<Direction>,
+);
 
 #[derive(Debug)]
 pub struct TransitionInfo {
@@ -151,6 +171,9 @@ pub struct PartialMachineInfo {
 
     pub stack_alphabet: Option<Vec<Token>>,
     pub start_stack: Option<Token>,
+
+    pub tape_alphabet: Option<Vec<Token>>,
+    pub blank_symbol: Option<Token>,
 }
 
 pub struct Parser;
@@ -245,6 +268,30 @@ impl Parser {
                                 SourceSpan::new(i.into(), identifier.len()),
                             ));
                         }
+                        "WRITE" => {
+                            tokens.push(Token::new(
+                                TokenKind::Write,
+                                SourceSpan::new(i.into(), identifier.len()),
+                            ));
+                        }
+                        "LEFT" => {
+                            tokens.push(Token::new(
+                                TokenKind::Left,
+                                SourceSpan::new(i.into(), identifier.len()),
+                            ));
+                        }
+                        "RIGHT" => {
+                            tokens.push(Token::new(
+                                TokenKind::Right,
+                                SourceSpan::new(i.into(), identifier.len()),
+                            ));
+                        }
+                        "STAY" => {
+                            tokens.push(Token::new(
+                                TokenKind::Stay,
+                                SourceSpan::new(i.into(), identifier.len()),
+                            ));
+                        }
                         _ => {
                             tokens.push(Token::new(
                                 TokenKind::Identifier,
@@ -268,6 +315,8 @@ impl Parser {
         let mut transitions = None;
         let mut start_state = None;
         let mut final_states = None;
+        let mut tape_alphabet = None;
+        let mut blank_symbol = None;
 
         let mut seen_sections: HashSet<Token> = HashSet::new();
         let ref mut input = input.into_iter().peekable();
@@ -306,6 +355,12 @@ impl Parser {
                 "start_stack" => {
                     start_stack = Some(Parser::parse_single_section(input)?);
                 }
+                "tape_alphabet" => {
+                    tape_alphabet = Some(Parser::parse_list_section(input)?);
+                }
+                "blank_symbol" => {
+                    blank_symbol = Some(Parser::parse_single_section(input)?);
+                }
                 "transitions" => {
                     transitions = Some(Parser::parse_transitions(input)?);
                 }
@@ -333,6 +388,8 @@ impl Parser {
             })?,
             stack_alphabet,
             start_stack,
+            tape_alphabet,
+            blank_symbol,
         })
     }
 
@@ -593,11 +650,14 @@ impl Parser {
                     };
 
                     let mut stack_next_state_token = None;
+                    let mut direction_token = None;
+
+                    // First, check for stack operations (PDA syntax)
                     if input.peek().unwrap().kind == TokenKind::Comma {
                         // Pass the comma
                         input.next().unwrap();
-                        let stack_next_state = input.next().unwrap();
-                        match stack_next_state.kind {
+                        let op_token = input.next().unwrap();
+                        match op_token.kind {
                             TokenKind::Push => {
                                 // Assert :
                                 let colon_token = input.next().unwrap();
@@ -615,12 +675,12 @@ impl Parser {
                                     }
                                 };
 
-                                // We need our idenetifier now
+                                // We need our identifier now
                                 let stack_next_state_iden = input.next().unwrap();
                                 match stack_next_state_iden.kind {
                                     TokenKind::Identifier => {
                                         stack_next_state_token = Some(StackTransition::Push(
-                                            stack_next_state,
+                                            op_token,
                                             stack_next_state_iden,
                                         ));
                                     }
@@ -637,22 +697,95 @@ impl Parser {
                                 }
                             }
                             TokenKind::Pop => {
-                                stack_next_state_token =
-                                    Some(StackTransition::Pop(stack_next_state));
+                                stack_next_state_token = Some(StackTransition::Pop(op_token));
                             }
                             TokenKind::Noop => {
-                                stack_next_state_token =
-                                    Some(StackTransition::NoOp(stack_next_state));
+                                stack_next_state_token = Some(StackTransition::NoOp(op_token));
+                            }
+
+                            // TM tape operations
+                            TokenKind::Write => {
+                                // Assert :
+                                let colon_token = input.next().unwrap();
+                                match colon_token.kind {
+                                    TokenKind::Colon => {}
+                                    TokenKind::EOF => {
+                                        return Err(ParserError::UnexpectedEOF.into());
+                                    }
+                                    _ => {
+                                        return Err(ParserError::UnexpectedToken {
+                                            at: colon_token.span,
+                                            expected: ":",
+                                        }
+                                        .into());
+                                    }
+                                };
+
+                                // We need the symbol to write
+                                let write_symbol = input.next().unwrap();
+                                match write_symbol.kind {
+                                    TokenKind::Identifier => {
+                                        stack_next_state_token =
+                                            Some(StackTransition::Write(op_token, write_symbol));
+                                    }
+                                    TokenKind::EOF => {
+                                        return Err(ParserError::UnexpectedEOF.into());
+                                    }
+                                    _ => {
+                                        return Err(ParserError::UnexpectedToken {
+                                            at: write_symbol.span,
+                                            expected: "<identifier>",
+                                        }
+                                        .into());
+                                    }
+                                }
+                            }
+                            TokenKind::Left => {
+                                direction_token = Some(Direction::Left(op_token));
+                            }
+                            TokenKind::Right => {
+                                direction_token = Some(Direction::Right(op_token));
+                            }
+                            TokenKind::Stay => {
+                                direction_token = Some(Direction::Stay(op_token));
                             }
                             TokenKind::EOF => {
                                 return Err(ParserError::UnexpectedEOF.into());
                             }
                             _ => {
                                 return Err(ParserError::UnexpectedToken {
-                                    at: stack_next_state.span,
-                                    expected: "<identifier>",
+                                    at: op_token.span,
+                                    expected: "PUSH, POP, NOOP, WRITE, LEFT, RIGHT, or STAY",
                                 }
                                 .into());
+                            }
+                        }
+
+                        // Check for another comma for additional operations (e.g., both WRITE and direction)
+                        if input.peek().unwrap().kind == TokenKind::Comma {
+                            // Pass the comma
+                            input.next().unwrap();
+                            let dir_token = input.next().unwrap();
+                            match dir_token.kind {
+                                TokenKind::Left => {
+                                    direction_token = Some(Direction::Left(dir_token));
+                                }
+                                TokenKind::Right => {
+                                    direction_token = Some(Direction::Right(dir_token));
+                                }
+                                TokenKind::Stay => {
+                                    direction_token = Some(Direction::Stay(dir_token));
+                                }
+                                TokenKind::EOF => {
+                                    return Err(ParserError::UnexpectedEOF.into());
+                                }
+                                _ => {
+                                    return Err(ParserError::UnexpectedToken {
+                                        at: dir_token.span,
+                                        expected: "LEFT, RIGHT, or STAY",
+                                    }
+                                    .into());
+                                }
                             }
                         }
                     }
@@ -679,7 +812,7 @@ impl Parser {
                             with_symbol: letter_token,
                             with_stack_symbol: stack_letter_token,
                         },
-                        to: TransitionTo(next_state_token, stack_next_state_token),
+                        to: TransitionTo(next_state_token, stack_next_state_token, direction_token),
                     });
                 }
                 TokenKind::EOF => {

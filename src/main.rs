@@ -27,6 +27,11 @@ enum Commands {
         /// Input string to be processed by the PDA
         input: String,
     },
+    /// Run a Turing Machine
+    Tm {
+        /// Input string to be processed by the Turing Machine
+        input: String,
+    },
 }
 
 fn handle_cli(cli: Cli, src: &'static str) -> miette::Result<()> {
@@ -62,6 +67,18 @@ fn handle_cli(cli: Cli, src: &'static str) -> miette::Result<()> {
             let pda_info = pda::Info::new(parsed, src)?;
             let pda = pda::Machine::new(pda_info);
             let accepted = pda.run(&input);
+
+            if accepted {
+                println!("Input is ACCEPTED");
+            } else {
+                println!("Input is REJECTED");
+            }
+        }
+        Commands::Tm { input } => {
+            use machine::tm;
+            let tm_info = tm::Info::new(parsed, src)?;
+            let tm = tm::Machine::new(tm_info);
+            let accepted = tm.run(&input);
 
             if accepted {
                 println!("Input is ACCEPTED");

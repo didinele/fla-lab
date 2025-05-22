@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use miette::Diagnostic;
 use thiserror::Error;
 
-use crate::parser::{ParserError, PartialMachineInfo};
+use crate::parser::{ParserError, PartialMachineInfo, StackTransition};
 
 use super::{TransitionFrom, TransitionTo};
 
@@ -11,6 +11,8 @@ use super::{TransitionFrom, TransitionTo};
 pub enum NFAError {
     #[error("NFA cannot have stack operations")]
     StackOperationsNotAllowed,
+    #[error("NFA cannot have tape operations")]
+    TapeOperationsNotAllowed,
 }
 
 #[derive(Debug, Clone)]
@@ -27,6 +29,10 @@ impl Info {
     pub fn new(machine: PartialMachineInfo, src: &'static str) -> miette::Result<Self> {
         if machine.stack_alphabet.is_some() || machine.start_stack.is_some() {
             return Err(NFAError::StackOperationsNotAllowed.into());
+        }
+
+        if machine.tape_alphabet.is_some() || machine.blank_symbol.is_some() {
+            return Err(NFAError::TapeOperationsNotAllowed.into());
         }
 
         let mut states = HashSet::new();
@@ -68,6 +74,25 @@ impl Info {
         for transition in machine.transitions {
             if transition.from.with_stack_symbol.is_some() || transition.to.1.is_some() {
                 return Err(NFAError::StackOperationsNotAllowed.into());
+            }
+
+            // Check for any stack transition operations
+            if let Some(ref stack_trans) = transition.to.1 {
+                match stack_trans {
+                    StackTransition::Push(_, _)
+                    | StackTransition::Pop(_)
+                    | StackTransition::NoOp(_) => {
+                        return Err(NFAError::StackOperationsNotAllowed.into());
+                    }
+                    StackTransition::Write(_, _) => {
+                        return Err(NFAError::TapeOperationsNotAllowed.into());
+                    }
+                }
+            }
+
+            // Check for tape operations
+            if transition.to.2.is_some() {
+                return Err(NFAError::TapeOperationsNotAllowed.into());
             }
 
             let from_state = transition.from.initial.src(src);

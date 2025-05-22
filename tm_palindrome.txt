@@ -1,0 +1,61 @@
+# Turing Machine that checks if a string is a palindrome over {a, b}
+[states]
+q0, q1, q2, q3, q4, q5, qaccept, qreject
+
+[alphabet]
+a, b
+
+[tape_alphabet]
+a, b, X, Y, _
+
+[blank_symbol]
+_
+
+[initial]
+q0
+
+[final]
+qaccept
+
+[transitions]
+# Initial state - scan right to find the end of the input
+q0(a) => (q1, WRITE:X, RIGHT)
+q0(b) => (q2, WRITE:Y, RIGHT)
+q0(_) => (qaccept, WRITE:_, RIGHT)  # Empty string is a palindrome
+
+# For 'a' at the beginning, mark with X and look for matching 'a' at the end
+q1(a) => (q1, WRITE:a, RIGHT)
+q1(b) => (q1, WRITE:b, RIGHT)
+q1(X) => (q1, WRITE:X, RIGHT)  # Skip already marked symbols
+q1(Y) => (q1, WRITE:Y, RIGHT)  # Skip already marked symbols
+q1(_) => (q3, WRITE:_, LEFT)  # Reached end, now look for 'a'
+
+q3(a) => (q4, WRITE:X, LEFT)  # Found matching 'a', mark with X and move left
+q3(b) => (qreject, WRITE:b, STAY)  # Mismatch, reject
+q3(X) => (q3, WRITE:X, LEFT)  # Skip already processed symbols
+q3(Y) => (q3, WRITE:Y, LEFT)  # Skip already processed symbols
+q3(_) => (qaccept, WRITE:_, STAY)  # Reached beginning with all matches - accept
+
+# For 'b' at the beginning, mark with Y and look for matching 'b' at the end
+q2(a) => (q2, WRITE:a, RIGHT)
+q2(b) => (q2, WRITE:b, RIGHT)
+q2(X) => (q2, WRITE:X, RIGHT)  # Skip already marked symbols
+q2(Y) => (q2, WRITE:Y, RIGHT)  # Skip already marked symbols
+q2(_) => (q5, WRITE:_, LEFT)  # Reached end, now look for 'b'
+
+q5(b) => (q4, WRITE:Y, LEFT)  # Found matching 'b', mark with Y and move left
+q5(a) => (qreject, WRITE:a, STAY)  # Mismatch, reject
+q5(X) => (q5, WRITE:X, LEFT)  # Skip already processed symbols
+q5(Y) => (q5, WRITE:Y, LEFT)  # Skip already processed symbols
+q5(_) => (qaccept, WRITE:_, STAY)  # Reached beginning with all matches - accept
+
+# After matching a pair, go back to the beginning to find next unprocessed symbol
+q4(a) => (q4, WRITE:a, LEFT)
+q4(b) => (q4, WRITE:b, LEFT)
+q4(X) => (q4, WRITE:X, LEFT)
+q4(Y) => (q4, WRITE:Y, LEFT)
+q4(_) => (q0, WRITE:_, RIGHT)  # Found beginning, restart process
+
+# Accept when the entire string is consumed (all symbols replaced with X or Y)
+q0(X) => (q0, WRITE:X, RIGHT)  # Skip X and continue
+q0(Y) => (q0, WRITE:Y, RIGHT)  # Skip Y and continue
