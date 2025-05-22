@@ -1,0 +1,87 @@
+# Turing Machine: Video Memory Simulation
+# Moves a binary string from the left of the first 'v'
+# into the space between the two 'v' markers.
+
+[states]
+q0, q_carry_X_find_first_v, q_carry_Y_find_first_v, q_write_0_in_video_mem, q_write_1_in_video_mem, q_return_to_first_v_from_video, q_return_to_source_marker, q_accept
+
+[alphabet]
+0, 1
+
+[tape_alphabet]
+# Symbols the TM can read/write on the tape
+0, 1, _, v, X, Y
+
+[blank_symbol]
+_
+
+[initial]
+q0
+
+[final]
+q_accept
+
+[transitions]
+# q0: Initial state. Scan for the next '0' or '1' to process.
+# If '0' found, mark it as 'X' (representing a '0' to be moved) and go to find the first 'v'.
+q0(0) => (q_carry_X_find_first_v, WRITE:X, RIGHT)
+# If '1' found, mark it as 'Y' (representing a '1' to be moved) and go to find the first 'v'.
+q0(1) => (q_carry_Y_find_first_v, WRITE:Y, RIGHT)
+# If blank '_' is found (either original blanks or previously erased X/Y), skip it and continue scanning.
+q0(_) => (q0, WRITE:_, RIGHT)
+# If 'v' is encountered, it means all original '0's and '1's to the left have been processed (erased to '_'). Accept.
+q0(v) => (q_accept, WRITE:v, RIGHT)
+
+
+# q_carry_X_find_first_v: A '0' (now 'X') has been picked up. Scan right to find the first 'v'.
+# Skip over original 0s, 1s, other markers (X,Y from previous steps if any), and blanks.
+q_carry_X_find_first_v(0) => (q_carry_X_find_first_v, WRITE:0, RIGHT)
+q_carry_X_find_first_v(1) => (q_carry_X_find_first_v, WRITE:1, RIGHT)
+q_carry_X_find_first_v(X) => (q_carry_X_find_first_v, WRITE:X, RIGHT)
+q_carry_X_find_first_v(Y) => (q_carry_X_find_first_v, WRITE:Y, RIGHT)
+q_carry_X_find_first_v(_) => (q_carry_X_find_first_v, WRITE:_, RIGHT)
+# Found the first 'v'. Move past it to enter the video memory region to write the '0'.
+q_carry_X_find_first_v(v) => (q_write_0_in_video_mem, WRITE:v, RIGHT)
+
+# q_carry_Y_find_first_v: A '1' (now 'Y') has been picked up. Scan right to find the first 'v'.
+q_carry_Y_find_first_v(0) => (q_carry_Y_find_first_v, WRITE:0, RIGHT)
+q_carry_Y_find_first_v(1) => (q_carry_Y_find_first_v, WRITE:1, RIGHT)
+q_carry_Y_find_first_v(X) => (q_carry_Y_find_first_v, WRITE:X, RIGHT)
+q_carry_Y_find_first_v(Y) => (q_carry_Y_find_first_v, WRITE:Y, RIGHT)
+q_carry_Y_find_first_v(_) => (q_carry_Y_find_first_v, WRITE:_, RIGHT)
+# Found the first 'v'. Move past it to enter the video memory region to write the '1'.
+q_carry_Y_find_first_v(v) => (q_write_1_in_video_mem, WRITE:v, RIGHT)
+
+
+# q_write_0_in_video_mem: Past the first 'v'. Scan right in video memory for a blank '_' to write '0'.
+# Skip over any '0's or '1's already written in the video memory.
+q_write_0_in_video_mem(0) => (q_write_0_in_video_mem, WRITE:0, RIGHT)
+q_write_0_in_video_mem(1) => (q_write_0_in_video_mem, WRITE:1, RIGHT)
+# Found a blank slot. Write '0', then move left to begin returning to the source marker.
+q_write_0_in_video_mem(_) => (q_return_to_first_v_from_video, WRITE:0, LEFT)
+
+# q_write_1_in_video_mem: Past the first 'v'. Scan right in video memory for a blank '_' to write '1'.
+q_write_1_in_video_mem(0) => (q_write_1_in_video_mem, WRITE:0, RIGHT)
+q_write_1_in_video_mem(1) => (q_write_1_in_video_mem, WRITE:1, RIGHT)
+# Found a blank slot. Write '1', then move left to begin returning to the source marker.
+q_write_1_in_video_mem(_) => (q_return_to_first_v_from_video, WRITE:1, LEFT)
+
+
+# q_return_to_first_v_from_video: A digit has been written in video memory. Scan left to find the first 'v' again.
+# The head is currently on the digit just written.
+q_return_to_first_v_from_video(0) => (q_return_to_first_v_from_video, WRITE:0, LEFT)
+q_return_to_first_v_from_video(1) => (q_return_to_first_v_from_video, WRITE:1, LEFT)
+q_return_to_first_v_from_video(_) => (q_return_to_first_v_from_video, WRITE:_, LEFT)
+# Found the first 'v'. Move left past it to find the source X/Y marker.
+q_return_to_first_v_from_video(v) => (q_return_to_source_marker, WRITE:v, LEFT)
+
+
+# q_return_to_source_marker: Now to the left of the first 'v'. Scan left to find the 'X' or 'Y' marker.
+# Skip over original (unprocessed) 0s, 1s, and blanks (or already erased markers).
+q_return_to_source_marker(0) => (q_return_to_source_marker, WRITE:0, LEFT)
+q_return_to_source_marker(1) => (q_return_to_source_marker, WRITE:1, LEFT)
+q_return_to_source_marker(_) => (q_return_to_source_marker, WRITE:_, LEFT)
+# Found the 'X' marker. Erase it (write '_') and move right to return to q0 for the next digit.
+q_return_to_source_marker(X) => (q0, WRITE:_, RIGHT)
+# Found the 'Y' marker. Erase it (write '_') and move right to return to q0 for the next digit.
+q_return_to_source_marker(Y) => (q0, WRITE:_, RIGHT)
