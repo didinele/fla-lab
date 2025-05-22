@@ -1,0 +1,31 @@
+# PDA that recognizes the context-free language a^n b^n (equal number of a's followed by b's)
+[states]
+q0, q1, q2, qaccept
+
+[alphabet]
+a, b
+
+[stack_alphabet]
+Z, A
+
+[initial]
+q0
+
+[final]
+qaccept
+
+[transitions]
+# Initial transition: Push bottom marker Z onto the stack
+q0(ε) => (q1, PUSH:Z)
+
+# For each 'a', push an 'A' onto the stack
+q1(a) => (q1, PUSH:A)
+
+# When we see first 'b', start popping 'A's for each 'b'
+q1(b, A) => (q2, POP)
+
+# Keep popping 'A's for each 'b'
+q2(b, A) => (q2, POP)
+
+# When only Z remains and no more input, accept
+q2(ε, Z) => (qaccept, NOOP)

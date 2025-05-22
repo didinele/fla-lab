@@ -1,0 +1,34 @@
+# PDA that recognizes palindromes over {a, b} with center marker 'c'
+# Example: abcba, aabcbaa
+[states]
+q0, q1, q2, qaccept
+
+[alphabet]
+a, b, c
+
+[stack_alphabet]
+Z, A, B
+
+[initial]
+q0
+
+[final]
+qaccept
+
+[transitions]
+# Initial transition: Push bottom marker Z onto the stack
+q0(ε) => (q1, PUSH:Z)
+
+# For each 'a' or 'b' before the center marker, push it onto the stack
+q1(a) => (q1, PUSH:A)
+q1(b) => (q1, PUSH:B)
+
+# When we see the center marker 'c', move to the matching phase
+q1(c) => (q2, NOOP)
+
+# For each 'a' or 'b' after the center, pop the matching symbol
+q2(a, A) => (q2, POP)
+q2(b, B) => (q2, POP)
+
+# When only Z remains and no more input, accept
+q2(ε, Z) => (qaccept, NOOP)

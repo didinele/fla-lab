@@ -21,3 +21,13 @@ cargo run -- nfa_accept.txt nfa "aba"
 cargo run -- nfa_complex.txt nfa "aabaa"
 # Expected: ACCEPTED (contains "ab")
 ```
+
+### PDA tests
+
+```
+cargo run -- pda_anbn.txt pda "aabb"
+# Expected: ACCEPTED
+
+cargo run -- pda_palindrome.txt pda "abcba"
+# Expected: ACCEPTED
+```

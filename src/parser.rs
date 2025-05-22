@@ -64,6 +64,7 @@ pub enum TokenKind {
     LeftParen,
     RightParen,
     Comma,
+    Colon,
     Arrow,
     Identifier,
     Push,
@@ -100,6 +101,7 @@ impl fmt::Display for Token {
             TokenKind::LeftParen => write!(f, "("),
             TokenKind::RightParen => write!(f, ")"),
             TokenKind::Comma => write!(f, ","),
+            TokenKind::Colon => write!(f, ":"),
             TokenKind::Arrow => write!(f, "=>"),
             TokenKind::Identifier => write!(f, "<identifier>"),
             TokenKind::Push => write!(f, "PUSH:<symbol>"),
@@ -180,6 +182,7 @@ impl Parser {
                     SourceSpan::new(i.into(), 1),
                 )),
                 ',' => tokens.push(Token::new(TokenKind::Comma, SourceSpan::new(i.into(), 1))),
+                ':' => tokens.push(Token::new(TokenKind::Colon, SourceSpan::new(i.into(), 1))),
                 // Two char tokens
                 '=' => {
                     if let Some((_, ch)) = input.peek() {
@@ -223,10 +226,32 @@ impl Parser {
                         }
                     }
 
-                    tokens.push(Token::new(
-                        TokenKind::Identifier,
-                        SourceSpan::new(i.into(), identifier.len()),
-                    ));
+                    match identifier.as_str() {
+                        "PUSH" => {
+                            tokens.push(Token::new(
+                                TokenKind::Push,
+                                SourceSpan::new(i.into(), identifier.len()),
+                            ));
+                        }
+                        "POP" => {
+                            tokens.push(Token::new(
+                                TokenKind::Pop,
+                                SourceSpan::new(i.into(), identifier.len()),
+                            ));
+                        }
+                        "NOOP" => {
+                            tokens.push(Token::new(
+                                TokenKind::Noop,
+                                SourceSpan::new(i.into(), identifier.len()),
+                            ));
+                        }
+                        _ => {
+                            tokens.push(Token::new(
+                                TokenKind::Identifier,
+                                SourceSpan::new(i.into(), identifier.len()),
+                            ));
+                        }
+                    }
                 }
             }
         }
@@ -247,8 +272,13 @@ impl Parser {
         let mut seen_sections: HashSet<Token> = HashSet::new();
         let ref mut input = input.into_iter().peekable();
 
-        while seen_sections.len() < 5 {
+        loop {
             let section = Self::parse_section(input)?;
+            let section = match section {
+                Some(section) => section,
+                None => break,
+            };
+
             if let Some(token) = seen_sections.get(&section) {
                 return Err(ParserError::DuplicateSection {
                     at: section.span,
@@ -306,13 +336,21 @@ impl Parser {
         })
     }
 
-    fn parse_section(input: &mut Peekable<impl Iterator<Item = Token>>) -> miette::Result<Token> {
+    fn parse_section(
+        input: &mut Peekable<impl Iterator<Item = Token>>,
+    ) -> miette::Result<Option<Token>> {
         // Assert [
-        let token = input.next().unwrap();
+        let token = match input.next() {
+            Some(token) => token,
+            None => {
+                return Ok(None);
+            }
+        };
+
         match token.kind {
             TokenKind::LeftSquareBracket => {}
             TokenKind::EOF => {
-                return Err(ParserError::UnexpectedEOF.into());
+                return Ok(None);
             }
             _ => {
                 return Err(ParserError::UnexpectedToken {
@@ -357,7 +395,7 @@ impl Parser {
             }
         };
 
-        Ok(name)
+        Ok(Some(name))
     }
 
     fn parse_single_section(
@@ -561,6 +599,22 @@ impl Parser {
                         let stack_next_state = input.next().unwrap();
                         match stack_next_state.kind {
                             TokenKind::Push => {
+                                // Assert :
+                                let colon_token = input.next().unwrap();
+                                match colon_token.kind {
+                                    TokenKind::Colon => {}
+                                    TokenKind::EOF => {
+                                        return Err(ParserError::UnexpectedEOF.into());
+                                    }
+                                    _ => {
+                                        return Err(ParserError::UnexpectedToken {
+                                            at: colon_token.span,
+                                            expected: ":",
+                                        }
+                                        .into());
+                                    }
+                                };
+
                                 // We need our idenetifier now
                                 let stack_next_state_iden = input.next().unwrap();
                                 match stack_next_state_iden.kind {

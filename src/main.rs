@@ -22,6 +22,11 @@ enum Commands {
         /// Input string to be processed by the NFA
         input: String,
     },
+    /// Run a PDA machine
+    Pda {
+        /// Input string to be processed by the PDA
+        input: String,
+    },
 }
 
 fn handle_cli(cli: Cli, src: &'static str) -> miette::Result<()> {
@@ -45,6 +50,18 @@ fn handle_cli(cli: Cli, src: &'static str) -> miette::Result<()> {
             let nfa_info = nfa::Info::new(parsed, src)?;
             let nfa = nfa::Machine::new(nfa_info);
             let accepted = nfa.run(&input);
+
+            if accepted {
+                println!("Input is ACCEPTED");
+            } else {
+                println!("Input is REJECTED");
+            }
+        }
+        Commands::Pda { input } => {
+            use machine::pda;
+            let pda_info = pda::Info::new(parsed, src)?;
+            let pda = pda::Machine::new(pda_info);
+            let accepted = pda.run(&input);
 
             if accepted {
                 println!("Input is ACCEPTED");
