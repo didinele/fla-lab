@@ -1,0 +1,54 @@
+[states]
+Entrance, Hallway, Kitchen, Library, SecretRoom, ExitState, InvalidState
+
+[alphabet]
+U, D, L, R
+
+[initial]
+Entrance
+
+[final]
+ExitState
+
+[transitions]
+# From Entrance
+Entrance(U) => (Hallway)
+Entrance(D) => (InvalidState)
+Entrance(L) => (InvalidState)
+Entrance(R) => (InvalidState)
+
+# From Hallway
+Hallway(D) => (Entrance)
+Hallway(U) => (Kitchen)
+Hallway(L) => (Library)
+Hallway(R) => (SecretRoom)
+
+# From Kitchen
+Kitchen(D) => (Hallway)
+Kitchen(U) => (InvalidState)
+Kitchen(L) => (InvalidState)
+Kitchen(R) => (InvalidState)
+
+# From Library
+Library(R) => (Hallway)
+Library(U) => (ExitState)
+Library(D) => (InvalidState)
+Library(L) => (InvalidState)
+
+# From SecretRoom
+SecretRoom(L) => (Hallway)
+SecretRoom(U) => (InvalidState)
+SecretRoom(D) => (InvalidState)
+SecretRoom(R) => (InvalidState)
+
+# From ExitState (no valid moves out)
+ExitState(U) => (InvalidState)
+ExitState(D) => (InvalidState)
+ExitState(L) => (InvalidState)
+ExitState(R) => (InvalidState)
+
+# From InvalidState (trap state)
+InvalidState(U) => (InvalidState)
+InvalidState(D) => (InvalidState)
+InvalidState(L) => (InvalidState)
+InvalidState(R) => (InvalidState)

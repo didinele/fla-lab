@@ -1,0 +1,101 @@
+[states]
+Entrance_NoKey, Hallway_NoKey, Kitchen_NoKey, Library_NoKey, SecretRoom_NoKey,
+Entrance_HasKey, Hallway_HasKey, Kitchen_HasKey, Library_HasKey, SecretRoom_HasKey,
+Exit_HasKey, InvalidState
+
+[alphabet]
+U, D, L, R, P # P as in "pick up key"
+
+[initial]
+Entrance_NoKey
+
+[final]
+Exit_HasKey
+
+[transitions]
+# --- NoKey States ---
+# From Entrance (NoKey)
+Entrance_NoKey(U) => (Hallway_NoKey)
+Entrance_NoKey(D) => (InvalidState)
+Entrance_NoKey(L) => (InvalidState)
+Entrance_NoKey(R) => (InvalidState)
+Entrance_NoKey(P) => (InvalidState)
+
+# From Hallway (NoKey)
+Hallway_NoKey(D) => (Entrance_NoKey)
+Hallway_NoKey(U) => (Kitchen_NoKey)
+Hallway_NoKey(L) => (Library_NoKey)
+Hallway_NoKey(R) => (SecretRoom_NoKey)
+Hallway_NoKey(P) => (InvalidState)
+
+# From Kitchen (NoKey)
+Kitchen_NoKey(D) => (Hallway_NoKey)
+Kitchen_NoKey(P) => (Kitchen_HasKey) # Key is picked up
+Kitchen_NoKey(U) => (InvalidState)
+Kitchen_NoKey(L) => (InvalidState)
+Kitchen_NoKey(R) => (InvalidState)
+
+# From Library (NoKey)
+Library_NoKey(R) => (Hallway_NoKey)
+Library_NoKey(U) => (InvalidState) # Cannot exit without key
+Library_NoKey(D) => (InvalidState)
+Library_NoKey(L) => (InvalidState)
+Library_NoKey(P) => (InvalidState)
+
+# From SecretRoom (NoKey)
+SecretRoom_NoKey(L) => (Hallway_NoKey)
+SecretRoom_NoKey(U) => (InvalidState)
+SecretRoom_NoKey(D) => (InvalidState)
+SecretRoom_NoKey(R) => (InvalidState)
+SecretRoom_NoKey(P) => (InvalidState)
+
+# --- HasKey States ---
+# From Kitchen (HasKey - key was just picked up or re-entering)
+# Player is now in Kitchen_HasKey state after P from Kitchen_NoKey
+Kitchen_HasKey(D) => (Hallway_HasKey)
+Kitchen_HasKey(U) => (InvalidState)
+Kitchen_HasKey(L) => (InvalidState)
+Kitchen_HasKey(R) => (InvalidState)
+Kitchen_HasKey(P) => (Kitchen_HasKey) # Already has key
+
+# From Hallway (HasKey)
+Hallway_HasKey(D) => (Entrance_HasKey)
+Hallway_HasKey(U) => (Kitchen_HasKey)
+Hallway_HasKey(L) => (Library_HasKey)
+Hallway_HasKey(R) => (SecretRoom_HasKey)
+Hallway_HasKey(P) => (InvalidState) # No key here
+
+# From Entrance (HasKey)
+Entrance_HasKey(U) => (Hallway_HasKey)
+Entrance_HasKey(D) => (InvalidState)
+Entrance_HasKey(L) => (InvalidState)
+Entrance_HasKey(R) => (InvalidState)
+Entrance_HasKey(P) => (InvalidState)
+
+# From Library (HasKey)
+Library_HasKey(R) => (Hallway_HasKey)
+Library_HasKey(U) => (Exit_HasKey) # Successful exit with key
+Library_HasKey(D) => (InvalidState)
+Library_HasKey(L) => (InvalidState)
+Library_HasKey(P) => (InvalidState)
+
+# From SecretRoom (HasKey)
+SecretRoom_HasKey(L) => (Hallway_HasKey)
+SecretRoom_HasKey(U) => (InvalidState)
+SecretRoom_HasKey(D) => (InvalidState)
+SecretRoom_HasKey(R) => (InvalidState)
+SecretRoom_HasKey(P) => (InvalidState)
+
+# From Exit_HasKey (no valid moves out)
+Exit_HasKey(U) => (InvalidState)
+Exit_HasKey(D) => (InvalidState)
+Exit_HasKey(L) => (InvalidState)
+Exit_HasKey(R) => (InvalidState)
+Exit_HasKey(P) => (InvalidState)
+
+# From InvalidState (trap state)
+InvalidState(U) => (InvalidState)
+InvalidState(D) => (InvalidState)
+InvalidState(L) => (InvalidState)
+InvalidState(R) => (InvalidState)
+InvalidState(P) => (InvalidState)

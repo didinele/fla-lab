@@ -1,28 +1,48 @@
-# lfa-lab
+# fla-lab
 
-`cargo run` to see a help message on how to run various automatas.
+A Rust toolchain is required to run this project. You can install it using [rustup](https://rustup.rs/).
+
+`cargo run` to see a help message on how to run various automatas:
+
+```
+❯ cargo run
+
+Usage: FLA <MACHINE_FILE_PATH> <COMMAND>
+
+Commands:
+  dfa   Run a DFA machine
+  nfa   Run a NFA machine
+  pda   Run a PDA machine
+  tm    Run a Turing Machine
+  help  Print this message or the help of the given subcommand(s)
+
+Arguments:
+  <MACHINE_FILE_PATH>  File path describing the DFA machine
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+```
 
 ## Assignments
 
-1. [x] Custom file format describing automatas: see any of the `*.txt` files in the root (and it's corresponding parser!)
+1. [x] Custom file format describing automatas: see any of the `*.txt` files in the root (and it corresponding parser!)
 2. [x] Implement the DFA runner
-3. [] Implement the two levels of the navigation game in the DFA
+3. [x] Implement the two levels of the navigation game in the DFA
 4. [x] Implement the NFA runner
 5. [x] Implement the PDA runner
 6. [x] Implement the Turing machine runner
-7. [] Implement the video space simulation Turing Machine (TODO)
-8. [x] Vibe code various automatas (as in, the `.txt` files)
+7. [x] Vibe code various automatas (as in, the `.txt` files)
 
 ## Solutions
 
 1.  See [`src/parser.rs`](src/parser.rs)
 2.  See [`src/machine/dfa.rs`](src/machine/dfa.rs)
-3.  TODO
+3.  See [`dfa_level1_escape.txt`](./dfa_level1_escape.txt) and [`dfa_level2_escape_with_key.txt`](./dfa_level2_escape_with_key.txt). Refer to [#DFA Tests](#dfa-test) for winning/losing examples.
 4.  See [`src/machine/nfa.rs`](src/machine/nfa.rs)
 5.  See [`src/machine/pda.rs`](src/machine/pda.rs)
 6.  See [`src/machine/tm.rs`](src/machine/tm.rs)
-7.  TODO
-8.  See the following:
+7.  See the following:
 
     a. See [`tm_palindrome.txt`](./tm_palindrome.txt):
 
@@ -60,6 +80,7 @@
     ```
 
     c. See [`tm_unary_addition.txt`](./tm_unary_addition.txt):
+
     ```
     cargo run -- tm_unary_addition.txt tm "11+111"
     # Expected: ACCEPTED (Tape: 11111_)
@@ -94,6 +115,36 @@
 cargo run -- dfa.txt dfa 1
 
 # Expected: ACCEPTED
+```
+
+#### DFA Game
+
+```
+cargo run -- dfa_level1_escape.txt dfa "ULU"
+# Expected: ACCEPTED (escaped: Entrance -> Hallway -> Library -> Exit)
+
+cargo run -- dfa_level1_escape.txt dfa "UUL"
+# Expected: REJECTED (stuck: Entrance -> Hallway -> Kitchen -> InvalidState trying to go L)
+
+cargo run -- dfa_level1_escape.txt dfa "URU"
+# Expected: REJECTED (stuck: Entrance -> Hallway -> SecretRoom -> InvalidState trying to go U)
+```
+
+```
+cargo run -- dfa_level2_escape_with_key.txt dfa "UUPDLU"
+# Expected: ACCEPTED (Entrance -> Hallway_NoKey -> Kitchen_NoKey -> P -> Kitchen_HasKey -> Hallway_HasKey -> Library_HasKey -> Exit_HasKey)
+
+cargo run -- dfa_level2_escape_with_key.txt dfa "ULU"
+# Expected: REJECTED (reached exit without key: Entrance -> Hallway_NoKey -> Library_NoKey -> tries U to Exit -> InvalidState)
+
+cargo run -- dfa_level2_escape_with_key.txt dfa "UUDLU"
+# Expected: REJECTED (reached exit without key, same as above but didn't try PU: Entrance -> Hallway_NoKey -> Kitchen_NoKey -> Hallway_NoKey -> Library_NoKey -> tries U to Exit -> InvalidState)
+
+cargo run -- dfa_level2_escape_with_key.txt dfa "UUPUDRL"
+# Expected: REJECTED (stuck in SecretRoom with key: Entrance -> Hallway_NoKey -> Kitchen_NoKey -> PU -> Kitchen_HasKey -> Hallway_HasKey -> SecretRoom_HasKey -> tries L to Hallway -> Hallway_HasKey, but this is not an exit path)
+
+cargo run -- dfa_level2_escape_with_key.txt dfa "L"
+# Expected: REJECTED (invalid move from Entrance: Entrance -> InvalidState)
 ```
 
 ### NFA tests
