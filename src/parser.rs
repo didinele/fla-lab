@@ -688,10 +688,10 @@ impl Parser {
                                 }
                             }
                             TokenKind::Pop => {
-                                stack_next_state_token = Some(StackTransition::Pop(())); // Was op_token
+                                stack_next_state_token = Some(StackTransition::Pop(()));
                             }
                             TokenKind::Noop => {
-                                stack_next_state_token = Some(StackTransition::NoOp(())); // Was op_token
+                                stack_next_state_token = Some(StackTransition::NoOp(()));
                             }
 
                             // TM tape operations
@@ -717,7 +717,7 @@ impl Parser {
                                 match write_symbol.kind {
                                     TokenKind::Identifier => {
                                         stack_next_state_token =
-                                            Some(StackTransition::Write((), write_symbol)); // Was op_token
+                                            Some(StackTransition::Write((), write_symbol));
                                     }
                                     TokenKind::EOF => {
                                         return Err(ParserError::UnexpectedEOF.into());
@@ -732,10 +732,10 @@ impl Parser {
                                 }
                             }
                             TokenKind::Left => {
-                                direction_token = Some(Direction::Left(())); // Was op_token
+                                direction_token = Some(Direction::Left(()));
                             }
                             TokenKind::Right => {
-                                direction_token = Some(Direction::Right(())); // Was op_token
+                                direction_token = Some(Direction::Right(()));
                             }
                             TokenKind::EOF => {
                                 return Err(ParserError::UnexpectedEOF.into());
@@ -743,7 +743,7 @@ impl Parser {
                             _ => {
                                 return Err(ParserError::UnexpectedToken {
                                     at: op_token.span,
-                                    expected: "PUSH, POP, NOOP, WRITE, LEFT, or RIGHT", // Removed STAY
+                                    expected: "PUSH, POP, NOOP, WRITE, LEFT, or RIGHT",
                                 }
                                 .into());
                             }
@@ -756,10 +756,10 @@ impl Parser {
                             let dir_token = input.next().unwrap();
                             match dir_token.kind {
                                 TokenKind::Left => {
-                                    direction_token = Some(Direction::Left(())); // Was dir_token
+                                    direction_token = Some(Direction::Left(()));
                                 }
                                 TokenKind::Right => {
-                                    direction_token = Some(Direction::Right(())); // Was dir_token
+                                    direction_token = Some(Direction::Right(()));
                                 }
                                 TokenKind::EOF => {
                                     return Err(ParserError::UnexpectedEOF.into());

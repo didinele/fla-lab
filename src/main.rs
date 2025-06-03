@@ -34,7 +34,7 @@ enum Commands {
     },
 }
 
-// TODO: Machine trait and dynamic dispatch
+// Could make Machines a trait and use dynamic dispatch here
 fn handle_cli(cli: Cli, src: &'static str) -> miette::Result<()> {
     let lexed = parser::Parser::lex(src)?;
     let parsed = parser::Parser::parse(src, lexed)?;

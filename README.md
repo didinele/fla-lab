@@ -1,6 +1,6 @@
 # fla-lab
 
-A Rust toolchain is required to run this project. You can install it using [rustup](https://rustup.rs/).
+A Rust toolchain is required to run this project. You can install one using [rustup](https://rustup.rs/).
 
 `cargo run` to see a help message on how to run various automatas:
 
@@ -26,7 +26,7 @@ Options:
 
 ## Assignments
 
-1. [x] Custom file format describing automatas: see any of the `*.txt` files in the root (and it corresponding parser!)
+1. [x] Custom file format describing automatas
 2. [x] Implement the DFA runner
 3. [x] Implement the two levels of the navigation game in the DFA
 4. [x] Implement the NFA runner
@@ -36,7 +36,7 @@ Options:
 
 ## Solutions
 
-1.  See [`src/parser.rs`](src/parser.rs)
+1.  See [`src/parser.rs`](src/parser.rs) and any of the .txt files in the root directory for examples
 2.  See [`src/machine/dfa.rs`](src/machine/dfa.rs)
 3.  See [`dfa_level1_escape.txt`](./dfa_level1_escape.txt) and [`dfa_level2_escape_with_key.txt`](./dfa_level2_escape_with_key.txt). Refer to [#DFA Tests](#dfa-test) for winning/losing examples.
 4.  See [`src/machine/nfa.rs`](src/machine/nfa.rs)
